@@ -1,23 +1,23 @@
-#ifndef ENCODER_H
-#define ENCODER_H
+#pragma once
 
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 
 #include <pthread.h>
-
 #include <OMX_Component.h>
-#include <libavformat/avformat.h>
+
+extern "C" {
+  #include <libavformat/avformat.h>
+}
 
 #include "common/cqueue.h"
-#include "common/visionipc.h"
+#include "visionipc.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+// encoder: lossey codec using hardware hevc
 
-typedef struct EncoderState {
+
+struct EncoderState {
   pthread_mutex_t lock;
   int width, height, fps;
   const char* path;
@@ -27,12 +27,6 @@ typedef struct EncoderState {
   bool dirty;
   int counter;
   int segment;
-
-  bool rotating;
-  bool closing;
-  bool opening;
-  char next_path[1024];
-  int next_segment;
 
   const char* filename;
   FILE *of;
@@ -65,20 +59,13 @@ typedef struct EncoderState {
 
   bool downscale;
   uint8_t *y_ptr2, *u_ptr2, *v_ptr2;
-} EncoderState;
+};
 
 void encoder_init(EncoderState *s, const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale);
 int encoder_encode_frame(EncoderState *s,
                          const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                          int in_width, int in_height,
-                         int *frame_segment, VIPCBufExtra *extra);
-void encoder_open(EncoderState *s, const char* path);
-void encoder_rotate(EncoderState *s, const char* new_path, int new_segment);
+                         int *frame_segment, VisionIpcBufExtra *extra);
+void encoder_open(EncoderState *s, const char* path, int segment);
 void encoder_close(EncoderState *s);
 void encoder_destroy(EncoderState *s);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
